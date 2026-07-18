@@ -79,6 +79,21 @@ Ogni volta che una modifica cambia endpoint, strutture dati, o decisioni
 progettuali, aggiorna le sezioni corrispondenti di questo file e di
 `README.md`.
 
+### 1.7 Commit message
+
+Ogni modifica va accompagnata da un commit message generato in **inglese**,
+nel formato [Conventional Commits](https://www.conventionalcommits.org/)
+(`tipo: sommario breve` + eventuale body esplicativo per modifiche non
+banali). Esempio:
+
+```
+chore: bootstrap project skeleton and document architecture
+
+Add AGENTS.md with full project context: pipeline overview, three-container
+architecture (generator, xtts, podcastify), rationale for every technical
+decision made so far...
+```
+
 ---
 
 ## 2. Architettura
