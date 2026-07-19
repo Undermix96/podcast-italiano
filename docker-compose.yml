@@ -1,0 +1,97 @@
+services:
+
+  # ------------------------------------------------------------------
+  # generator — container1: pipeline RSS→LLM→TTS→feed
+  # Contiene il cron che avvia la generazione giornaliera.
+  # Per avvio manuale: docker compose run --rm generator run
+  # ------------------------------------------------------------------
+  generator:
+    build: ./container1-generator
+    container_name: podcast-generator
+    restart: unless-stopped
+    depends_on:
+      - xtts
+    env_file:
+      - .env
+    environment:
+      - TZ=Europe/Rome
+    volumes:
+      # Stato deduplicazione (persistente tra le esecuzioni)
+      - generator-state:/data/state
+      # Log applicativi (persistenti)
+      - generator-logs:/data/logs
+      # Output audio: condiviso con podcastify
+      - podcast-media:/data/public
+      # YAML episodi: condiviso con podcastify
+      - podcast-feed:/data/podcasts
+    networks:
+      - podcast-net
+
+  # ------------------------------------------------------------------
+  # xtts — openedai-speech con backend XTTS-v2 su CPU
+  # Espone l'API /v1/audio/speech compatibile OpenAI.
+  # Il modello XTTS (~2GB) viene scaricato al primo avvio.
+  # ------------------------------------------------------------------
+  xtts:
+    image: ghcr.io/matatonic/openedai-speech
+    container_name: podcast-xtts
+    restart: unless-stopped
+    # CPU-only: nessuna GPU dichiarata.
+    # Il tempo di generazione stimato per un episodio da 15 min è 30-90 min.
+    command: ["--xtts_device", "cpu", "--preload", "xtts"]
+    volumes:
+      # Configurazione voci (voice_to_speaker.yaml + campioni WAV)
+      - ./xtts-config:/app/config
+      # Cache modello XTTS (persistente per evitare ri-download)
+      - xtts-model-cache:/root/.local/share/tts
+    environment:
+      - TZ=Europe/Rome
+    networks:
+      - podcast-net
+    # Non esposto all'esterno: raggiungibile solo dal generator sulla rete interna
+
+  # ------------------------------------------------------------------
+  # podcastify — server feed RSS + hosting file audio
+  # Feed disponibile su http://<host>:${PODCASTIFY_HOST_PORT}/<name>.xml
+  # Aggiungi questo URL come podcast in Audiobookshelf.
+  # ------------------------------------------------------------------
+  podcastify:
+    image: fnayou/podcastify:v1.0.1
+    container_name: podcast-feed
+    restart: unless-stopped
+    ports:
+      - "${PODCASTIFY_HOST_PORT:-8080}:8080"
+    environment:
+      - PORT=8080
+      - PUBLIC_BASE_URL=${PUBLIC_BASE_URL:-http://localhost:8080}
+      - PODCASTS_ROOT=/app/podcasts
+      - PUBLIC_ROOT=/app/public
+      - RUN_ON_START=true
+      - PUBLISH_XML=true
+      - TZ=Europe/Rome
+    volumes:
+      # mp3 generati dal generator (read-only per podcastify)
+      - podcast-media:/app/public:ro
+      # YAML episodi generati dal generator (read-only per podcastify)
+      - podcast-feed:/app/podcasts:ro
+    networks:
+      - podcast-net
+
+
+# ------------------------------------------------------------------
+# Volumi
+# ------------------------------------------------------------------
+volumes:
+  generator-state:    # seen.json deduplicazione
+  generator-logs:     # podcast.log
+  podcast-media:      # mp3 degli episodi (condiviso generator ↔ podcastify)
+  podcast-feed:       # YAML episodi    (condiviso generator ↔ podcastify)
+  xtts-model-cache:   # modello XTTS scaricato (~2GB, non si ri-scarica)
+
+
+# ------------------------------------------------------------------
+# Rete interna (generator ↔ xtts senza esporre xtts all'esterno)
+# ------------------------------------------------------------------
+networks:
+  podcast-net:
+    driver: bridge

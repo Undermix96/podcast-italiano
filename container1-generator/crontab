@@ -1,0 +1,8 @@
+# Generato automaticamente da entrypoint.sh — non modificare questo file.
+# Modifica CRON_SCHEDULE nel file .env del progetto.
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+${CRON_SCHEDULE} root cd /app && /usr/local/bin/python generate_episode.py >> /data/logs/podcast.log 2>&1
+
+# Riga vuota obbligatoria (richiesta da cron)

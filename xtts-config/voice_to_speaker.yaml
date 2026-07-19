@@ -1,0 +1,32 @@
+# voice_to_speaker.yaml — configurazione voci per openedai-speech (XTTS-v2)
+#
+# "it_voce" è la voce usata da generate_episode.py (XTTS_VOICE nel .env).
+#
+# PRIMA DI AVVIARE LO STACK:
+#   1. Registra o recupera un campione audio in italiano (6-30 secondi,
+#      audio pulito, niente musica di fondo, voce singola).
+#   2. Convertilo in WAV mono 22050 Hz con ffmpeg:
+#        ffmpeg -i sorgente.mp3 -ac 1 -ar 22050 -t 20 xtts-config/voices/it_voce.wav
+#   3. Salva il file come xtts-config/voices/it_voce.wav
+#      (la cartella è montata nel container come /app/voices).
+#
+# Parametri XTTS:
+#   enable_text_splitting  il testo lungo viene spezzato automaticamente in frasi
+#   language               codice Coqui per l'italiano; forza la lingua invece
+#                          dell'auto-detection (più affidabile per testi italiani)
+#   temperature            0.65-0.75: meno variabile, più simile al campione originale
+#   repetition_penalty     penalizza le ripetizioni (utile per testi lunghi)
+#   top_k / top_p          controllo diversità del campionamento
+#   speed                  velocità parlato (1.0 = normale)
+
+tts-1-hd:
+  it_voce:
+    model: xtts
+    speaker: voices/it_voce.wav
+    language: it
+    enable_text_splitting: true
+    temperature: 0.70
+    repetition_penalty: 10.0
+    top_k: 50
+    top_p: 0.85
+    speed: 1.0
