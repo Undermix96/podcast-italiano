@@ -40,7 +40,7 @@ services:
     container_name: podcast-xtts
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "8744:8000"
     environment:
       - TZ=Europe/Rome
       - TTS_HOME=voices
