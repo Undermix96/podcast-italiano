@@ -1,0 +1,27 @@
+# Segreti e configurazione locale
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Stato applicativo generato a runtime
+container1-generator/data/
+*.log
+
+# Audio e voci (contenuti binari, non versionati)
+xtts-config/voices/*.wav
+podcastify/public/
+podcastify/podcasts/*.yaml
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Docker
+*.pid
