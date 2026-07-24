@@ -3,10 +3,12 @@ services:
   # ------------------------------------------------------------------
   # generator — container1: pipeline RSS→LLM→TTS→feed
   # Contiene il cron che avvia la generazione giornaliera.
+  # L'immagine viene pullata da DockerHub (GENERATOR_IMAGE nel .env).
   # Per avvio manuale: docker compose run --rm generator run
+  # Per build e push: vedi build.sh
   # ------------------------------------------------------------------
   generator:
-    build: ./container1-generator
+    image: ${GENERATOR_IMAGE}
     container_name: podcast-generator
     restart: unless-stopped
     depends_on:

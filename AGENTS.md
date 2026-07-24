@@ -68,6 +68,7 @@ accettabile (gira di notte via cron).
 |---|---|
 | `container1-generator/generate_episode.py` | Logica centrale della pipeline (fetch, deduplicazione, riassunto, TTS, scrittura YAML). Un errore qui può generare episodi sbagliati, duplicati, o silenziosamente non generare nulla. |
 | `container1-generator/crontab` / `entrypoint.sh` | Se lo scheduling si rompe, l'intero sistema smette di produrre episodi senza errori visibili se non nei log. |
+| `build.sh` | Costruisce e pubblica l'immagine su DockerHub. Un tag errato o un push su canale sbagliato (`latest` invece di `dev`) impatta tutti i deploy. |
 | `.env` | Contiene la chiave API OpenRouter e la configurazione delle fonti. Non va mai committato con valori reali (solo `.env.example`). |
 | `docker-compose.yml` | Definisce rete/volumi condivisi tra i 3 container; un errore nei nomi host o nei volumi rompe la comunicazione tra i servizi senza errori applicativi chiari. |
 | `xtts-config/voice_to_speaker.yaml` | Se il nome voce non corrisponde a quello usato in `generate_episode.py`/`.env`, la sintesi vocale fallisce. |
@@ -93,6 +94,20 @@ Add AGENTS.md with full project context: pipeline overview, three-container
 architecture (generator, xtts, podcastify), rationale for every technical
 decision made so far...
 ```
+
+### 1.8 Usa sempre le best practice aggiornate
+
+Al momento di ogni modifica, applica le best practice correnti per il
+linguaggio, lo strumento o il servizio coinvolto — non quelle che erano
+valide quando il codice è stato scritto per la prima volta.
+
+In pratica:
+- Se una API, libreria o funzionalità è deprecata, segnalalo e proponi
+  l'alternativa attuale prima di scrivere codice.
+- Se esistono pattern più sicuri, più leggibili o più idiomatici rispetto
+  a quelli già presenti nel file, preferiscili nelle parti nuove.
+- Se hai dubbi su cosa sia "aggiornato", cerca online prima di procedere
+  (vedi §1.4).
 
 ---
 
@@ -146,7 +161,7 @@ Tre container Docker, nessun orchestratore separato:
 
 ---
 
-## 4. Struttura del repository (pianificata)
+## 4. Struttura del repository
 
 ```
 podcast-italiano/
@@ -155,7 +170,8 @@ podcast-italiano/
 ├── LICENSE
 ├── .gitignore
 ├── .env.example
-├── docker-compose.yml
+├── build.sh                           # build + push immagine generator su DockerHub
+├── docker-compose.yml                 # deploy: pull immagini + avvio stack
 ├── container1-generator/
 │   ├── Dockerfile
 │   ├── requirements.txt
@@ -170,9 +186,17 @@ podcast-italiano/
     └── public/                        # mp3 serviti + feed RSS, generato da Podcastify
 ```
 
-I file marcati "generato/pianificato" non esistono ancora: verranno creati
-nei prossimi passi, uno alla volta, con approvazione esplicita prima di
-ciascuna scrittura (vedi §1.1).
+### Flusso build → deploy
+
+```
+[macchina sviluppo]              [host Docker produzione]
+  ./build.sh 1.0.0 latest   →   docker compose pull
+  (build + push DockerHub)       docker compose up -d
+```
+
+Solo l'immagine `generator` viene buildata localmente. Le immagini `xtts`
+(`ghcr.io/matatonic/openedai-speech`) e `podcastify` (`fnayou/podcastify`)
+sono pubbliche upstream e vengono pullate direttamente.
 
 ---
 
@@ -180,10 +204,11 @@ ciascuna scrittura (vedi §1.1).
 
 - [x] Decisioni architetturali e tecniche definite (questo documento)
 - [x] Struttura base repository (`.gitignore`, `LICENSE`, `README.md`)
-- [ ] `container1-generator/generate_episode.py`
-- [ ] `container1-generator/Dockerfile`, `crontab`, `entrypoint.sh`
-- [ ] `xtts-config/voice_to_speaker.yaml` (voce italiana da configurare con
-      campione audio fornito dall'utente)
-- [ ] `docker-compose.yml`
-- [ ] `.env.example`
-- [ ] Test end-to-end della pipeline completa
+- [x] `container1-generator/generate_episode.py`
+- [x] `container1-generator/Dockerfile`, `requirements.txt`, `crontab`, `entrypoint.sh`
+- [x] `xtts-config/voice_to_speaker.yaml`
+- [x] `docker-compose.yml` (deploy via pull da DockerHub)
+- [x] `.env.example`
+- [x] `build.sh` (build + push immagine generator)
+- [ ] Campione vocale italiano (`xtts-config/voices/it_voce.wav`) — da fornire manualmente
+- [ ] Test end-to-end della pipeline completa sull'host di produzione
