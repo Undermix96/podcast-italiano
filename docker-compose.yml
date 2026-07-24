@@ -33,21 +33,27 @@ services:
   # xtts — openedai-speech con backend XTTS-v2 su CPU
   # Espone l'API /v1/audio/speech compatibile OpenAI.
   # Il modello XTTS (~2GB) viene scaricato al primo avvio.
+  # Configurazione tramite variabili d'ambiente (no command args).
   # ------------------------------------------------------------------
   xtts:
     image: ghcr.io/matatonic/openedai-speech
     container_name: podcast-xtts
     restart: unless-stopped
-    # CPU-only: nessuna GPU dichiarata.
-    # Il tempo di generazione stimato per un episodio da 15 min è 30-90 min.
-    command: ["--xtts_device", "cpu", "--preload", "xtts"]
-    volumes:
-      # Configurazione voci (voice_to_speaker.yaml + campioni WAV)
-      - ./xtts-config:/app/config
-      # Cache modello XTTS (persistente per evitare ri-download)
-      - xtts-model-cache:/root/.local/share/tts
+    ports:
+      - "8000:8000"
     environment:
       - TZ=Europe/Rome
+      - TTS_HOME=voices
+      - HF_HOME=voices
+      - PRELOAD_MODEL=xtts
+      - EXTRA_ARGS=--xtts_device cpu
+    volumes:
+      # Campioni vocali (it_voce.wav)
+      - ./xtts-config/voices:/app/voices
+      # Configurazione voci (voice_to_speaker.yaml)
+      - ./xtts-config:/app/config
+      # Cache modello XTTS (persistente per evitare ri-download ~2GB)
+      - xtts-model-cache:/app/voices
     networks:
       - podcast-net
     # Non esposto all'esterno: raggiungibile solo dal generator sulla rete interna
