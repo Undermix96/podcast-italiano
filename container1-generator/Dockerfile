@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         cron \
         curl \
         tzdata \
+        gettext-base \
     && rm -rf /var/lib/apt/lists/*
 
 # ---------------------------------------------------------------------------
