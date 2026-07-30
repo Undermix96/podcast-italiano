@@ -43,17 +43,18 @@ services:
       - "8744:8000"
     environment:
       - TZ=Europe/Rome
-      - TTS_HOME=voices
-      - HF_HOME=voices
+      - TTS_HOME=model_cache
+      - HF_HOME=model_cache
       - PRELOAD_MODEL=xtts
       - EXTRA_ARGS=--xtts_device cpu
     volumes:
-      # Campioni vocali (it_voce.wav)
+      # Campioni vocali (it_voce.wav) — bind mount dall'host
       - ./xtts-config/voices:/app/voices
-      # Configurazione voci (voice_to_speaker.yaml)
+      # Configurazione voci (voice_to_speaker.yaml) — bind mount dall'host
       - ./xtts-config:/app/config
-      # Cache modello XTTS (persistente per evitare ri-download ~2GB)
-      - xtts-model-cache:/app/voices
+      # Cache modello XTTS (~2GB, persistente tra i restart).
+      # Path separato da /app/voices per non sovrascrivere i campioni.
+      - xtts-model-cache:/app/model_cache
     networks:
       - podcast-net
     # Non esposto all'esterno: raggiungibile solo dal generator sulla rete interna
