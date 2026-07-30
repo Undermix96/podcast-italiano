@@ -109,6 +109,27 @@ In pratica:
 - Se hai dubbi su cosa sia "aggiornato", cerca online prima di procedere
   (vedi §1.4).
 
+### 1.9 Propaga le scoperte del debug isolato nei file reali
+
+Quando un test o un debug (anche in un ambiente separato/sandbox, non
+l'host di destinazione) rivela che manca una dipendenza, un pacchetto di
+sistema, o serve un workaround per far funzionare qualcosa, **quella
+scoperta va applicata subito ai file del progetto** (Dockerfile,
+requirements, ecc.) — non solo aggirata localmente per far passare il test.
+
+Esempio concreto già accaduto in questo progetto: durante un debug
+automatico era emerso che `envsubst` richiede il pacchetto `gettext-base`,
+non presente in `python:3.11-slim`. Il problema era stato risolto
+localmente nell'ambiente di test (installando il pacchetto lì) ma non
+riportato nel `Dockerfile` del progetto — l'immagine reale è rimasta
+rotta finché l'errore non si è manifestato in produzione.
+
+Regola pratica: ogni volta che durante un debug si esegue un comando tipo
+`apt-get install`, `pip install`, o qualunque altro workaround per far
+funzionare qualcosa che nel progetto non c'era già, chiediti subito "questo
+va aggiunto anche a Dockerfile/requirements.txt/ecc.?" — e se sì, fallo
+nella stessa sessione, non rimandarlo.
+
 ---
 
 ## 2. Architettura
