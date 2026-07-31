@@ -34,6 +34,15 @@ envsubst '${CRON_SCHEDULE}' \
 
 chmod 0644 /etc/cron.d/podcast
 
+# I job lanciati da cron NON ereditano l'ambiente del container (Docker
+# inietta le variabili solo per PID 1, non per i processi figli avviati
+# dal demone cron). Catturiamo qui l'ambiente in un file sourceable, che
+# il job cron caricherà esplicitamente prima di eseguire lo script
+# (vedi crontab). declare -p gestisce correttamente il quoting anche per
+# valori con spazi/caratteri speciali (es. RSS_FEEDS, OPENROUTER_API_KEY).
+declare -p $(printenv | cut -d= -f1) > /app/container_env.sh 2>/dev/null || true
+chmod 0644 /app/container_env.sh
+
 echo "[entrypoint] Cron avviato con schedule: ${CRON_SCHEDULE}"
 echo "[entrypoint] Timezone: $(cat /etc/timezone)"
 echo "[entrypoint] Log applicativo: ${LOG_FILE}"

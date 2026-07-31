@@ -3,6 +3,6 @@
 SHELL=/bin/bash
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
-${CRON_SCHEDULE} root cd /app && /usr/local/bin/python generate_episode.py >> /data/logs/podcast.log 2>&1
+${CRON_SCHEDULE} root cd /app && source /app/container_env.sh && /usr/local/bin/python generate_episode.py >> /data/logs/podcast.log 2>&1
 
 # Riga vuota obbligatoria (richiesta da cron)
