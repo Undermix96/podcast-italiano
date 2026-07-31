@@ -593,18 +593,24 @@ def main():
             "Considera di ridurre MAX_ARTICLES_PER_EPISODE o MAX_WORDS_EPISODE_SCRIPT."
         )
 
-    # 8. Sintesi audio
-    date_str  = datetime.now().strftime("%Y-%m-%d")
-    mp3_name  = f"rassegna-stampa-{date_str}.mp3"
-    mp3_path  = cfg["output_dir"] / mp3_name
+    # 8. Salvataggio script su file (per debug/ispezione — testo esatto inviato a XTTS)
+    date_str   = datetime.now().strftime("%Y-%m-%d")
+    mp3_name   = f"rassegna-stampa-{date_str}.mp3"
+    script_name = f"rassegna-stampa-{date_str}.txt"
+    mp3_path    = cfg["output_dir"] / mp3_name
+    script_path = cfg["output_dir"] / script_name
     cfg["output_dir"].mkdir(parents=True, exist_ok=True)
 
+    script_path.write_text(script, encoding="utf-8")
+    logger.info(f"Script salvato: {script_path}")
+
+    # 9. Sintesi audio
     ok = synthesize_audio(script, mp3_path, cfg["xtts_url"], cfg["xtts_voice"], logger)
     if not ok:
         logger.error("Sintesi audio fallita. Uscita.")
         sys.exit(1)
 
-    # 9. Aggiorna YAML Podcastify
+    # 10. Aggiorna YAML Podcastify
     episode_title       = f"{cfg['podcast_title']} — {date_str}"
     episode_description = f"Rassegna stampa del {date_str}: {len(summaries)} notizie."
     update_podcastify_yaml(
@@ -619,7 +625,7 @@ def main():
         logger,
     )
 
-    # 10. Aggiorna stato deduplicazione
+    # 11. Aggiorna stato deduplicazione
     now = datetime.now(timezone.utc)
     for article in all_new:
         excerpt = " ".join(article["text"].split()[:80])
